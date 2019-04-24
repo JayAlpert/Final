@@ -74,14 +74,15 @@ function getBlockHeights() {
         console.log(height); // Current block height
         let stop = false;
         let total = 0;
+        let h = height;
         while (!stop) {
-          const count = await isValidHeight(height);
+          const count = await isValidHeight(h);
           if (count != null) {
             total += count;
           } else {
             stop = true;
           }
-          height -= 1;
+          h -= 1;
         }
         resolve(total);
       })
