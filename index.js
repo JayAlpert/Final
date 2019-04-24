@@ -23,7 +23,12 @@ app.listen(port, () => {
   getBlockHeights();
 })
 
+app.get('/', (req, res) => {
+  res.status(200).send('Loaded');
+});
+
 app.get('/getTotalTransactionCount', (req, res) => {
+  const timePeriod = req.query.timePeriod;
   getTransactionCount(timePeriod, (result) => {
     const str = JSON.stringify(result);
     res.status(200).send(str);
