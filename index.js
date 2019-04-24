@@ -20,56 +20,47 @@ const client = new RpcClient(node);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}!`);
-  getBlockHeights();
 })
 
 app.get('/', (req, res) => {
   res.status(200).send('Loaded');
 });
 
-app.get('/getTotalTransactionCount', (req, res) => {
-  const timePeriod = req.query.timePeriod;
-  getTransactionCount(timePeriod, (result) => {
-    const str = JSON.stringify(result);
-    res.status(200).send(str);
-  });
-})
+app.get('/getTransactionCount', (req, res) => {
+  const hours = req.query.hours;
+  getTransactionCount(hours)
+    .then((result) => {
+      const str = JSON.stringify(result);
+      res.status(200).send(str);
+    })
+    .catch((err) => {
+      const str = JSON.stringify(err);
+      res.status(400).send(str);
+    });
+});
 
-function getTransactionCount(timePeriod) {
-  // 90 days
-
-  // Step 1. Get blockheights for past hour
-  const blockHeights = getBlockHeights();
-
-  // Step 2. Loop through each block from step 1 and get the total number of transactions
-  // Use promise.all() to call all of these at once
-
-  // Step 3. Return the total number of tansactions
-
-  return 99
-}
-
-function isValidHeight(height) {
-  return new Promise((resolve, reject) => {
+function getTransactionsForBlock(height, hours) {
+  return new Promise((resolve) => {
     client.getBlockJson(height)
       .then((res) => {
-        console.log(res); // Info on the current block
-
         // We want the time of the current blockheight
-        const timestamp = res.result.Timestamp; // HERE
-        if (timestamp > 0){
+        const timestamp = res.result.Header.Timestamp; // HERE
+        console.log(timestamp);
+        if (timestamp > 1556142602){
             resolve(res.result.Transactions.length);
         } else {
             resolve(null);
         } // TODO: Check that the timestamp is within the range 1 hour in unix time
       })
       .catch((err) => {
-        reject(err);
+        console.error(err);
+        resolve(null);
       });
   });
 }
 
-function getBlockHeights() {
+//TODO: resolve(total) based on the hours
+function getTransactionCount(hours) {
   return new Promise((resolve, reject) => {
     // Step 1. Get the current block height
     client.getBlockHeight()
@@ -81,11 +72,13 @@ function getBlockHeights() {
         let total = 0;
         let h = height;
         while (!stop) {
-          const count = await isValidHeight(h);
+          const count = await getTransactionsForBlock(h, hours);
           if (count != null) {
             total += count;
+            console.log(`Total: ${total}`);
           } else {
             stop = true;
+            console.log(`Stopping with total: ${total}`);
           }
           h -= 1;
         }
